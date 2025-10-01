@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Builds
+/dist
+/.vite
+
+# Env and secrets
+.env
+.env.*
+/certs/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
