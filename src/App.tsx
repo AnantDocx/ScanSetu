@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from './context/AuthContext'
 
 function Logo() {
   return (
@@ -13,6 +14,7 @@ function Logo() {
 }
 
 function Nav() {
+  const { user, profile, signInWithGoogle, signOut } = useAuth()
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-800/60 backdrop-blur bg-neutral-950/70">
       <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
@@ -26,9 +28,18 @@ function Nav() {
           <Link to="/dashboard" className="px-4 py-2 rounded-md border border-neutral-800 text-neutral-200 hover:bg-neutral-900">
             Dashboard
           </Link>
-          <button className="px-4 py-2 rounded-md bg-brand text-neutral-950 font-medium hover:opacity-90 transition-opacity">
-            Sign in with Google
-          </button>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline text-sm text-neutral-300">{profile?.full_name ?? user.email ?? 'Signed in'}</span>
+              <button onClick={signOut} className="px-4 py-2 rounded-md border border-neutral-800 text-neutral-200 hover:bg-neutral-900">
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <button onClick={signInWithGoogle} className="px-4 py-2 rounded-md bg-brand text-neutral-950 font-medium hover:opacity-90 transition-opacity">
+              Sign in with Google
+            </button>
+          )}
         </div>
       </div>
     </header>
