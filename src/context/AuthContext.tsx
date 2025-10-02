@@ -13,6 +13,9 @@ type AuthContextType = {
   profile: Profile | null
   loading: boolean
   signInWithGoogle: () => Promise<void>
+  signInWithEmail: (email: string, password: string) => Promise<{ error?: string }>
+  signUpWithEmail: (email: string, password: string, fullName?: string) => Promise<{ error?: string; needsVerification?: boolean }>
+  sendMagicLink: (email: string) => Promise<{ error?: string }>
   signOut: () => Promise<void>
 }
 
@@ -98,7 +101,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     []
   )
 
-  const value: AuthContextType = { user, profile, loading, signInWithGoogle, signOut }
+  const signInWithEmail = useMemo(
+    () => async (email: string, password: string) => {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) return { error: error.message }
+      return {}
+    },
+    []
+  )
+
+  const signUpWithEmail = useMemo(
+    () => async (email: string, password: string, fullName?: string) => {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName },
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
+      })
+      if (error) return { error: error.message }
+      // If email confirmations ON, user must verify email
+      const needsVerification = !!data?.user && !data.user?.email_confirmed_at
+      return { needsVerification }
+    },
+    []
+  )
+
+  const sendMagicLink = useMemo(
+    () => async (email: string) => {
+      const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/dashboard` } })
+      if (error) return { error: error.message }
+      return {}
+    },
+    []
+  )
+
+  const value: AuthContextType = { user, profile, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, sendMagicLink, signOut }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

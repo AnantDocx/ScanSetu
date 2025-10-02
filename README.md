@@ -1,6 +1,6 @@
 # ScanSetu (Frontend)
 
-Barcode-based inventory management for labs and workshops. Scan items with phone cameras or USB scanners, issue/return with Google login, and track assignments with an audit trail.
+Barcode-based inventory management for labs and workshops. Scan items with phone cameras or USB scanners, issue/return with email login (password or magic link), and track assignments with an audit trail.
 
 ## Overview
 
@@ -23,7 +23,8 @@ Barcode-based inventory management for labs and workshops. Scan items with phone
 - **Stack**: React 18 + Vite + TypeScript, TailwindCSS, React Router.
   - Entry: `src/main.tsx`
   - Landing: `src/App.tsx`
-  - Dashboard: `src/pages/Dashboard.tsx`
+  - Admin Dashboard: `src/pages/Dashboard.tsx`
+  - Student Dashboard: `src/pages/StudentDashboard.tsx`
 - **Data**: Supabase (Postgres + RLS)
   - Client: `src/lib/supabaseClient.ts`
   - Schema: `db/supabase_schema.sql`
@@ -83,6 +84,33 @@ Open `http://localhost:5173` (desktop). For phone testing, see HTTPS dev below.
    - `VITE_SUPABASE_URL=...`
    - `VITE_SUPABASE_ANON_KEY=...`
 
+### Auth & Roles
+
+- Email-based auth is used (password or magic link).
+- In Supabase → Authentication → Providers → Email:
+  - Turn ON email signups.
+  - If using magic links or confirmations, configure SMTP in Authentication → Email.
+- In Supabase → Authentication → URL Configuration:
+  - Site URL: `http://localhost:5173` (dev) and your Vercel URL (prod).
+  - Add both to Additional Redirect URLs.
+- Mark admin accounts by email allowlist:
+  ```sql
+  insert into public.admin_emails(email) values ('your-admin@domain.com')
+  on conflict do nothing;
+  ```
+  On first sign-in, a `profiles` row is upserted and a trigger sets `role = 'admin'` if the email is in `admin_emails`, else `student`.
+
+### Dashboards & Routing
+
+- Routes:
+  - Admin: `/dashboard` (protected by `RequireAdmin`)
+  - Student: `/student` (protected by `RequireAuth`)
+- Navigation is role-aware (in `src/App.tsx`):
+  - Admins see “Dashboard” linking to `/dashboard`.
+  - Students see “My Items” linking to `/student`.
+- Sign in / Register via the modal (`src/components/AuthModal.tsx`).
+  - Tabs: Sign In (password), Register (password), Magic Link (passwordless; requires SMTP).
+
 ### Local HTTPS Dev (optional for mobile camera)
 
 - Vite is configured to auto-enable HTTPS if certificates are present.
@@ -110,7 +138,7 @@ When deployed on Vercel (HTTPS), mobile camera permission prompts will work.
 
 ## Roadmap
 
-- Google Sign-In and user session context.
+- Phone OTP login (optional) and OAuth providers (optional).
 - Barcode decoding using `@zxing/browser` or `quagga`.
 - Admin screens for Product/Item/User CRUD.
 - Issue/Return flows with validations and receipts.
